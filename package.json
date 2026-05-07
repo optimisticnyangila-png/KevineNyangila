@@ -1,0 +1,23 @@
+{
+    "name": "flowpost",
+    "version": "1.0.0",
+    "description": "Social media automation platform",
+    "scripts": {
+        "start": "node scripts/kill-ports.js 3000 5000 && concurrently \"npm run start-backend\" \"npm run start-frontend\"",
+        "start-backend": "cd backend && set PORT=5000&& npm start",
+        "start-frontend": "cd frontend && set PORT=3000&& npm start",
+        "dev": "node scripts/kill-ports.js 3000 5000 && concurrently \"npm run dev-backend\" \"npm run dev-frontend\"",
+        "dev-backend": "cd backend && set PORT=5000&& npm run dev",
+        "dev-frontend": "cd frontend && set PORT=3000&& npm run dev",
+        "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+        "syntax-guard": "node scripts/syntax-guard.js"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "bcrypt": "^6.0.0",
+        "concurrently": "^9.2.1",
+        "dotenv": "^17.4.2",
+        "jsonwebtoken": "^9.0.3",
+        "openai": "^6.35.0"
+    }
+}

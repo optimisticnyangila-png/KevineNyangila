@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="api-base" content="">
+    <title>FlowPost</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="config.js"></script>
+    <script src="publishingDashboard.js"></script>
+    <script src="DASHBOARD_INTEGRATION.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div id="command-area" class="container command-console">
+            <p class="command-label">Try commands like <code>/login</code>, <code>/register</code>, <code>/create post</code>, <code>/publish 123</code>, <code>/schedule 123 at 2026-04-19 10:00</code>, <code>/connect facebook</code>, <code>/help</code>, <code>/logout</code>.</p>
+            <input type="text" id="chat-command" placeholder="Type a command, e.g. /help" autocomplete="off">
+            <button type="button" id="execute-command">Run Command</button>
+            <pre id="command-output" class="command-output hidden" aria-live="polite"></pre>
+        </div>
+        <div id="login" class="container">
+            <h2>FlowPost</h2>
+            <p class="welcome-text">Welcome back<br>Log in to access your dashboard, manage posts, and publish content across your connected platforms.</p>
+            <button type="button" id="google-login">Login with Google</button>
+            <button type="button" id="facebook-login">Login with Facebook</button>
+            <div class="divider">or</div>
+            <input type="email" id="email" placeholder="Email" autocomplete="username">
+            <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+            <button type="button" id="email-login">Login to Dashboard</button>
+            <div class="register-prompt">
+                <p>Don't have an account yet? Create one in seconds and start using FlowPost to schedule and publish your content across all platforms.</p>
+                <button type="button" id="signup">Create Account</button>
+                <p class="register-link"><a href="#" id="show-login-link">Register here</a></p>
+            </div>
+            <div class="terms">
+                <p>By continuing, you agree to securely connect your social media accounts to FlowPost.</p>
+            </div>
+        </div>
+        <div id="register" class="container hidden">
+            <h2>Create your FlowPost account</h2>
+            <p class="register-text">Create your FlowPost account to start managing, scheduling, and publishing content across Facebook, Instagram, YouTube, and TikTok from one dashboard.</p>
+            <button type="button" id="google-signup">Sign up with Google</button>
+            <button type="button" id="facebook-signup">Sign up with Facebook</button>
+            <div class="divider">or</div>
+            <input type="email" id="register-email" placeholder="Email" autocomplete="username">
+            <input type="password" id="register-password" placeholder="Password" autocomplete="new-password">
+            <button type="button" id="email-signup">Sign Up & Continue</button>
+            <div class="login-prompt">
+                <p>Already have an account? <a href="#" id="show-login-from-register">Log in here</a></p>
+            </div>
+            <div class="terms">
+                <p>By continuing, you agree to securely connect your social media accounts to FlowPost.</p>
+            </div>
+        </div>
+        <div id="dashboard" class="container hidden">
+            <h2>Dashboard</h2>
+            <button type="button" id="logout">Log out</button>
+            <div id="platform-status">
+                <h3>Connected Platforms</h3>
+                <ul id="platform-status-list"></ul>
+            </div>
+            <div id="connect-platforms">
+                <button type="button" id="connect-facebook">Connect Facebook</button>
+                <button type="button" id="connect-instagram">Connect Instagram</button>
+                <button type="button" id="connect-tiktok">Connect TikTok</button>
+                <button type="button" id="connect-youtube">Connect YouTube</button>
+            </div>
+            <div id="create-post">
+                <textarea id="post-content" placeholder="Post content"></textarea>
+                <input type="file" id="media-upload" multiple>
+
+                <!-- UPDATED: Replace platform dropdown with account selection -->
+                <div id="account-selection-container" style="margin: 15px 0; padding: 10px; background-color: #f9f9f9; border-radius: 4px; border: 1px solid #ddd;">
+                    <!-- Will be populated by loadPlatformAccounts() -->
+                    <p style="color: #999; margin: 0;">No accounts connected yet. Use the buttons above to connect platforms.</p>
+                </div>
+
+                <p class="hint">Select one or more accounts to publish your post to multiple platforms at once.</p>
+
+                <button type="button" id="create-post-btn">Create Post</button>
+                <button type="button" id="cancel-edit-btn" class="hidden">Cancel Edit</button>
+                <label for="schedule-time">Schedule for (optional)</label>
+                <input type="datetime-local" id="schedule-time">
+                <button type="button" id="schedule-post-btn">Schedule selected draft</button>
+                <button type="button" id="publish-now-btn">Publish selected draft now</button>
+                <p class="hint">Create posts as drafts, then schedule them for different times. You can schedule multiple different posts at different intervals.</p>
+                <label for="active-post">Active post for schedule / publish</label>
+                <select id="active-post"></select>
+            </div>
+            <div id="publish-results" class="hidden">
+                <h3>Publish Results</h3>
+                <div id="publish-results-list"></div>
+                <button type="button" id="close-results-btn">Close</button>
+            </div>
+            <div id="draft-posts">
+                <h3>Your drafts</h3>
+                <ul id="drafts-list"></ul>
+            </div>
+            <div id="scheduled-posts">
+                <h3>Scheduled posts</h3>
+                <p class="hint">Posts scheduled for future publishing.</p>
+                <ul id="posts-list"></ul>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

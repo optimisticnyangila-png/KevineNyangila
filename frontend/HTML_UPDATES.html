@@ -1,0 +1,300 @@
+<!--
+FLOWPOST FRONTEND - HTML STRUCTURE UPDATES
+This file shows the key HTML changes needed for the multi-account upgrade
+-->
+
+<!-- 1. REPLACE OLD PLATFORM DROPDOWN WITH ACCOUNT CONTAINER -->
+<!-- OLD: -->
+<!--
+<select id="platforms" multiple>
+    <option value="facebook">Facebook</option>
+    <option value="instagram">Instagram</option>
+    <option value="youtube">YouTube</option>
+    <option value="tiktok">TikTok</option>
+</select>
+-->
+
+<!-- NEW: -->
+<div id="account-selection-container" class="account-section-wrapper">
+    <!-- Will be populated by renderAccountCheckboxes() -->
+    <!-- Shows:
+        FACEBOOK (2)
+        ☑ My Business Page ✓ Active
+        ☑ My Personal Page ✓ Active
+        
+        YOUTUBE (1)
+        ☑ My Channel ⚠️ Token Expired
+        
+        INSTAGRAM (1)
+        ☑ Business Account ✓ Active
+    -->
+</div>
+
+<!-- 2. ADD PLATFORM STATUS DISPLAY -->
+<div id="platform-status-section">
+    <h3>Connected Accounts</h3>
+    <ul id="platform-status-list">
+        <!-- Will be populated with: -->
+        <!-- Facebook → 2 accounts connected -->
+        <!-- YouTube → 1 account connected -->
+        <!-- etc. -->
+    </ul>
+</div>
+
+<!-- 3. UPDATE CREATE POST SECTION -->
+<section id="create-post-section">
+    <h2>Create Post</h2>
+
+    <!-- Post content textarea -->
+    <textarea id="post-content" placeholder="What's on your mind? (max 5000 chars)" maxlength="5000"></textarea>
+
+    <!-- Media upload -->
+    <div>
+        <label for="media-upload">Upload media (images/videos):</label>
+        <input type="file" id="media-upload" multiple accept="image/*,video/*">
+    </div>
+
+    <!-- UPDATED: Account selection instead of platform dropdown -->
+    <div id="account-selection-container" class="account-section-wrapper">
+        <!-- Dynamically populated by loadPlatformAccounts() -->
+    </div>
+
+    <!-- HINT TEXT -->
+    <p style="font-size: 0.9em; color: #666; margin: 10px 0;">
+        💡 Select one or more accounts to publish this post to multiple platforms at once
+    </p>
+
+    <!-- Buttons -->
+    <button id="create-post-btn">Create/Update Post</button>
+    <button id="cancel-edit-btn">Cancel</button>
+</section>
+
+<!-- 4. ADD ACCOUNT MANAGEMENT SECTION (optional but recommended) -->
+<section id="account-management-section">
+    <h2>Account Management</h2>
+    <div id="connected-accounts-list">
+        <!-- Will be populated by renderAccountCheckboxes() -->
+    </div>
+    <div style="margin-top: 15px;">
+        <button id="connect-facebook" class="connect-btn">+ Connect Facebook</button>
+        <button id="connect-instagram" class="connect-btn">+ Connect Instagram</button>
+        <button id="connect-youtube" class="connect-btn">+ Connect YouTube</button>
+        <button id="connect-tiktok" class="connect-btn">+ Connect TikTok</button>
+    </div>
+</section>
+
+<!-- 5. ADD RETRY UI FOR FAILED PUBLISHES (optional) -->
+<section id="failed-publish-section" style="display: none;">
+    <h3>Publish Issues</h3>
+    <div id="failed-accounts-list">
+        <!-- Shows failed accounts with retry options -->
+    </div>
+</section>
+
+<!-- ============================================ -->
+<!-- CSS ADDITIONS -->
+<!-- ============================================ -->
+<style>
+    .account-section-wrapper {
+        margin: 15px 0;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+    
+    .account-section {
+        margin-bottom: 15px;
+        padding: 12px;
+        background-color: #f5f5f5;
+        border-left: 4px solid #2196F3;
+        border-radius: 4px;
+    }
+    
+    .account-section h4 {
+        margin: 0 0 10px 0;
+        color: #333;
+        font-size: 0.95em;
+        font-weight: 600;
+    }
+    
+    .account-section label {
+        display: block;
+        margin-bottom: 8px;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+    }
+    
+    .account-section label:hover {
+        background-color: #efefef;
+    }
+    
+    .account-section input[type="checkbox"] {
+        cursor: pointer;
+        margin-right: 8px;
+    }
+    
+    .account-status-active {
+        color: #4caf50;
+        font-weight: 500;
+    }
+    
+    .account-status-expired {
+        color: #d32f2f;
+        font-weight: 500;
+    }
+    
+    .account-status-icon {
+        font-size: 0.9em;
+        margin-left: 4px;
+    }
+    
+    #platform-status-list {
+        list-style: none;
+        padding: 0;
+        margin: 10px 0;
+    }
+    
+    #platform-status-list li {
+        padding: 8px 12px;
+        margin-bottom: 6px;
+        background-color: #e8f5e9;
+        border-left: 3px solid #4caf50;
+        border-radius: 3px;
+        font-size: 0.95em;
+    }
+    
+    .connect-btn {
+        display: inline-block;
+        margin: 5px;
+        padding: 8px 16px;
+        background-color: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background-color 0.2s;
+    }
+    
+    .connect-btn:hover {
+        background-color: #1976D2;
+    }
+    
+    .disconnect-btn {
+        display: inline-block;
+        padding: 4px 8px;
+        margin-left: 8px;
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.85em;
+        transition: background-color 0.2s;
+    }
+    
+    .disconnect-btn:hover {
+        background-color: #d32f2f;
+    }
+    
+    #create-post-btn {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+        font-weight: 600;
+    }
+    
+    #create-post-btn:hover {
+        background-color: #45a049;
+    }
+</style>
+
+<!-- ============================================ -->
+<!-- JAVASCRIPT INITIALIZATION -->
+<!-- ============================================ -->
+<script>
+    // Update showDashboard() to use new account loading
+    async function showDashboard() {
+        document.getElementById('login').classList.add('hidden');
+        document.getElementById('register').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+
+        // CHANGED: Use loadPlatformAccounts instead of loadPlatformStatus
+        await loadPlatformAccounts();
+        await loadDraftPosts();
+        await loadScheduledPosts();
+    }
+
+    // Update create post button handler
+    document.getElementById('create-post-btn').addEventListener('click', async() => {
+        const content = document.getElementById('post-content').value;
+        const media = document.getElementById('media-upload').files;
+
+        // NEW: Get selected accounts instead of platforms
+        const accountCheckboxes = document.querySelectorAll('.account-checkbox:checked');
+        const selectedAccountIds = Array.from(accountCheckboxes).map(cb => cb.value);
+
+        if (selectedAccountIds.length === 0) {
+            alert('Please select at least one account to publish to.');
+            return;
+        }
+
+        const method = editingPostId ? 'PUT' : 'POST';
+        const url = editingPostId ?
+            `${API_BASE}/create-post/${editingPostId}` :
+            `${API_BASE}/create-post`;
+
+        let mediaUrls = [];
+        if (media.length > 0) {
+            for (const file of media) {
+                const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
+                const snapshot = await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                mediaUrls.push(downloadURL);
+            }
+        }
+
+        try {
+            const response = await apiFetch(url, {
+                method,
+                body: JSON.stringify({
+                    content,
+                    mediaUrls,
+                    // NEW: Send account IDs as targets
+                    targets: selectedAccountIds,
+                    // Optional: also send platform names for backward compatibility
+                    platforms: Array.from(accountCheckboxes)
+                        .map(cb => cb.dataset.platform)
+                        .filter((p, i, a) => a.indexOf(p) === i)
+                }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                alert(data.error || 'Unable to save post');
+                return;
+            }
+
+            if (editingPostId) {
+                alert('Post updated successfully.');
+            } else {
+                lastCreatedPostId = data.postId;
+                alert('Post created: ' + data.postId);
+            }
+
+            clearEditingMode();
+            document.getElementById('media-upload').value = '';
+            document.getElementById('post-content').value = '';
+            await loadDraftPosts();
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+</script>

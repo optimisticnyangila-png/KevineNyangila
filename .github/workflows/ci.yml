@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backend:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install root dependencies
+        run: npm install
+      - name: Run syntax guard
+        run: npm run syntax-guard
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+      - name: Run backend tests
+        run: cd backend && npm test

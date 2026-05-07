@@ -1,0 +1,245 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    margin: 0;
+    padding: 28px 12px;
+    color: #1f2933;
+    background: #f4f7fb;
+}
+
+#app {
+    width: min(100%, 460px);
+}
+
+.hint {
+    font-size: 0.85rem;
+    color: #555;
+    margin: 8px 0;
+}
+
+.container {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 22px;
+    border: 1px solid #d8e0ea;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 10px 28px rgba(31, 41, 55, 0.08);
+}
+
+.hidden {
+    display: none;
+}
+
+button {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 11px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 10px 0;
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+}
+
+h2,
+h3 {
+    margin-top: 0;
+}
+
+.welcome-text {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.register-text {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.divider {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+    color: #888;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #ddd;
+}
+
+.divider::after {
+    content: 'or';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 0 10px;
+}
+
+.register-prompt {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.register-prompt p {
+    margin-bottom: 10px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.register-link {
+    margin-top: 10px;
+}
+
+.register-link a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.register-link a:hover {
+    text-decoration: underline;
+}
+
+.login-prompt {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.login-prompt a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.login-prompt a:hover {
+    text-decoration: underline;
+}
+
+.terms {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+#google-login,
+#google-signup {
+    background-color: #4285f4;
+    color: white;
+    border: none;
+}
+
+#facebook-login,
+#facebook-signup {
+    background-color: #1877f2;
+    color: white;
+    border: none;
+}
+
+#email-login,
+#email-signup {
+    background-color: #28a745;
+    color: white;
+    border: none;
+}
+
+#signup {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+}
+
+.command-console {
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+    background: #fafafa;
+    padding: 16px;
+}
+
+.command-label {
+    margin: 0 0 12px;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.command-output {
+    margin-top: 10px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    font-size: 0.9rem;
+    color: #222;
+}
+
+.command-output.error {
+    border-color: #e74c3c;
+    background: #fdecea;
+    color: #8a1f11;
+}
+
+button#execute-command {
+    background-color: #0056b3;
+    color: white;
+    border: none;
+}
+
+#notifications {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+    display: grid;
+    gap: 8px;
+    max-width: min(360px, calc(100vw - 32px));
+}
+
+.notification {
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #d9d9d9;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    color: #222;
+    font-size: 0.92rem;
+}
+
+.notification-success {
+    border-color: #28a745;
+}
+
+.notification-warning {
+    border-color: #f0ad4e;
+}
+
+.notification-error {
+    border-color: #dc3545;
+}
