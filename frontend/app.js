@@ -1,6 +1,16 @@
-// Firebase config (replace with your config)
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
+import { getAuth, FacebookAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+
+const runtimeConfig = window.__FLOWPOST_CONFIG__ || {};
+const firebaseApiKey = runtimeConfig.API_KEY || runtimeConfig.FIREBASE_API_KEY;
+
+if (!firebaseApiKey) {
+    console.error('Missing Firebase API key. Set API_KEY in frontend/.env or the server environment.');
+}
+
 const firebaseConfig = {
-    apiKey: 'AIzaSyAHVreS7cLkuW0sE9i-yZHmu9E9ABzx22U',
+    apiKey: firebaseApiKey,
     authDomain: 'flowpost-13ca6.firebaseapp.com',
     projectId: 'flowpost-13ca6',
     storageBucket: 'flowpost-13ca6.firebasestorage.app',
@@ -9,15 +19,10 @@ const firebaseConfig = {
     measurementId: 'G-490522HEBE',
 };
 
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
-import { getAuth, FacebookAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
-
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 const auth = getAuth(app);
 
-const runtimeConfig = window.__FLOWPOST_CONFIG__ || {};
 const apiBaseMeta = document.querySelector('meta[name="api-base"]')?.content;
 const API_BASE = (runtimeConfig.API_BASE || apiBaseMeta || window.location.origin).replace(/\/$/, '');
 
