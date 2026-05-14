@@ -31,7 +31,6 @@ dotenv.config({
 });
 
 const frontendOrigin = process.env.FRONTEND_ORIGIN || "http://localhost:3000";
-const backendOrigin = process.env.BACKEND_ORIGIN || `http://localhost:${process.env.PORT || 5000}`;
 const allowedOrigins = (process.env.CORS_ORIGINS || frontendOrigin)
     .split(",")
     .map((origin) => origin.trim())
@@ -227,7 +226,10 @@ module.exports = { app, server, socketManager, redisPublishQueue };
 
 if (require.main === module) {
     server.listen(PORT, () => {
-        console.log(`FlowPost API on ${backendOrigin}`);
+        console.log(`FlowPost API running on port ${PORT}`);
+        if (process.env.BACKEND_ORIGIN) {
+            console.log(`FlowPost API public URL: ${process.env.BACKEND_ORIGIN}`);
+        }
         console.log(`WebSocket server ready for real-time updates`);
     });
 }
