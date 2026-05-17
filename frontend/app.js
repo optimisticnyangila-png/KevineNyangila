@@ -23,8 +23,9 @@ const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 const auth = getAuth(app);
 
+const DEFAULT_API_BASE = 'https://flowpost-backed.onrender.com';
 const apiBaseMeta = document.querySelector('meta[name="api-base"]')?.content;
-const API_BASE = (runtimeConfig.API_BASE || apiBaseMeta || window.location.origin).replace(/\/$/, '');
+const API_BASE = (runtimeConfig.API_BASE || apiBaseMeta || DEFAULT_API_BASE).replace(/\/$/, '');
 
 // WebSocket connection for real-time updates
 let socket = null;

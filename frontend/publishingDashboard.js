@@ -6,7 +6,7 @@
 class PublishingDashboard {
     constructor(apiBase, frontendOrigin) {
         const runtimeConfig = typeof window !== 'undefined' ? (window.__FLOWPOST_CONFIG__ || {}) : {};
-        this.apiBase = apiBase || runtimeConfig.API_BASE || 'http://localhost:' + 5000;
+        this.apiBase = apiBase || runtimeConfig.API_BASE || 'https://flowpost-backed.onrender.com';
         this.frontendOrigin = frontendOrigin || runtimeConfig.FRONTEND_ORIGIN || 'http://localhost:' + 3000;
         this.socket = null;
         this.isConnected = false;
