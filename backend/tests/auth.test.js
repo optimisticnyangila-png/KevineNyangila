@@ -11,6 +11,7 @@ process.env.GOOGLE_LOGIN_REDIRECT_URI = 'http://backend.test/auth/google/callbac
 process.env.FACEBOOK_LOGIN_REDIRECT_URI = 'http://backend.test/auth/facebook/callback';
 
 const users = new Map();
+const oauthCodes = new Map();
 let idCounter = 0;
 
 function queryByEmail(email) {
@@ -36,22 +37,31 @@ function queryByEmail(email) {
 const mockFirestore = {
     collection: jest.fn((name) => ({
         doc: jest.fn((id) => {
-            const docId = id || `generated-user-${++idCounter}`;
+            const docId = id || `generated-doc-${++idCounter}`;
             return {
                 id: docId,
                 get: jest.fn(async() => ({
-                    exists: users.has(docId),
-                    data: () => users.get(docId),
+                    exists: name === 'oauthExchangeCodes' ? oauthCodes.has(docId) : users.has(docId),
+                    data: () => (name === 'oauthExchangeCodes' ? oauthCodes.get(docId) : users.get(docId)),
                 })),
                 set: jest.fn(async(data, options) => {
-                    const existing = users.get(docId) || {};
-                    users.set(docId, options && options.merge ? {...existing, ...data } : data);
+                    if (name === 'oauthExchangeCodes') {
+                        oauthCodes.set(docId, data);
+                    } else {
+                        const existing = users.get(docId) || {};
+                        users.set(docId, options && options.merge ? {...existing, ...data } : data);
+                    }
                 }),
                 update: jest.fn(async(data) => {
-                    users.set(docId, {...(users.get(docId) || {}), ...data });
+                    if (name === 'oauthExchangeCodes') {
+                        oauthCodes.set(docId, {...(oauthCodes.get(docId) || {}), ...data });
+                    } else {
+                        users.set(docId, {...(users.get(docId) || {}), ...data });
+                    }
                 }),
                 delete: jest.fn(async() => {
-                    users.delete(docId);
+                    if (name === 'oauthExchangeCodes') oauthCodes.delete(docId);
+                    else users.delete(docId);
                 }),
             };
         }),
@@ -63,11 +73,28 @@ const mockFirestore = {
         })),
         add: jest.fn(async(data) => {
             const id = `generated-doc-${++idCounter}`;
-            users.set(id, data);
+            if (name === 'oauthExchangeCodes') oauthCodes.set(id, data);
+            else users.set(id, data);
             return { id };
         }),
     })),
-    runTransaction: jest.fn(),
+    runTransaction: jest.fn(async(transactionFn) => {
+        const transaction = {
+            get: jest.fn(async(ref) => {
+                const id = ref.id;
+                return {
+                    exists: oauthCodes.has(id),
+                    data: () => oauthCodes.get(id),
+                };
+            }),
+            update: jest.fn(async(ref, data) => {
+                const id = ref.id;
+                const existing = oauthCodes.get(id) || {};
+                oauthCodes.set(id, {...existing, ...data });
+            }),
+        };
+        return transactionFn(transaction);
+    }),
 };
 
 jest.mock('firebase-admin', () => ({
@@ -125,6 +152,7 @@ const { app } = require('../server');
 
 beforeEach(() => {
     users.clear();
+    oauthCodes.clear();
     idCounter = 0;
 });
 
@@ -186,5 +214,73 @@ describe('OAuth login routes', () => {
         expect(location.searchParams.get('client_id')).toBe('facebook-app-id');
         expect(location.searchParams.get('redirect_uri')).toBe('http://backend.test/auth/facebook/callback');
         expect(location.searchParams.get('scope')).toBe('email,public_profile');
+    });
+});
+
+describe('Single-Use OAuth Code Exchange Security', () => {
+    test('POST /auth/exchange-code exchanges a valid unexpired code for a JWT session token', async() => {
+        const testCode = 'valid-test-code-123';
+        oauthCodes.set(testCode, {
+            uid: 'user-123',
+            email: 'oauth@example.com',
+            expiresAt: new Date(Date.now() + 60000),
+            used: false,
+        });
+
+        const res = await request(app)
+            .post('/auth/exchange-code')
+            .send({ code: testCode });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.token).toBeTruthy();
+        expect(res.body.user.email).toBe('oauth@example.com');
+        expect(res.headers['set-cookie'].join(';')).toContain('access_token=');
+
+        // Verify code is marked as used
+        expect(oauthCodes.get(testCode).used).toBe(true);
+    });
+
+    test('POST /auth/exchange-code rejects reusing an already used exchange code', async() => {
+        const testCode = 'reused-test-code-456';
+        oauthCodes.set(testCode, {
+            uid: 'user-123',
+            email: 'oauth@example.com',
+            expiresAt: new Date(Date.now() + 60000),
+            used: true,
+        });
+
+        const res = await request(app)
+            .post('/auth/exchange-code')
+            .send({ code: testCode });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.error).toBe('Exchange code already used');
+    });
+
+    test('POST /auth/exchange-code rejects an expired exchange code', async() => {
+        const testCode = 'expired-test-code-789';
+        oauthCodes.set(testCode, {
+            uid: 'user-123',
+            email: 'oauth@example.com',
+            expiresAt: new Date(Date.now() - 10000), // Expired 10s ago
+            used: false,
+        });
+
+        const res = await request(app)
+            .post('/auth/exchange-code')
+            .send({ code: testCode });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.error).toBe('Exchange code expired');
+    });
+
+    test('POST /auth/exchange-code rejects non-existent exchange codes', async() => {
+        const res = await request(app)
+            .post('/auth/exchange-code')
+            .send({ code: 'non-existent-code' });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.error).toBe('Invalid exchange code');
     });
 });

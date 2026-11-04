@@ -4,6 +4,7 @@ const { readdirSync, statSync } = require('fs');
 
 function collectJsFiles(dir) {
     return readdirSync(dir).flatMap((item) => {
+        if (item === 'node_modules' || item.startsWith('.')) return [];
         const fullPath = join(dir, item);
         if (statSync(fullPath).isDirectory()) {
             return collectJsFiles(fullPath);
@@ -13,8 +14,7 @@ function collectJsFiles(dir) {
 }
 
 const root = join(__dirname, '..');
-const backend = join(root, 'backend');
-const files = collectJsFiles(root).filter((file) => !file.includes('node_modules'));
+const files = collectJsFiles(root);
 
 let failed = false;
 for (const file of files) {

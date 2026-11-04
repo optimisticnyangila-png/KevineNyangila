@@ -17,6 +17,53 @@ function jwtSecret() {
     return process.env.JWT_SECRET;
 }
 
+async function createOAuthExchangeCode(uid, email) {
+    const code = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 1000); // 60 seconds single-use TTL
+    await db.collection('oauthExchangeCodes').doc(code).set({
+        uid,
+        email,
+        expiresAt,
+        used: false,
+        createdAt: new Date(),
+    });
+    return code;
+}
+
+exports.exchangeCode = async (req, res) => {
+    const { code } = req.body;
+    if (!code || typeof code !== 'string') {
+        return res.status(400).json({ error: 'Exchange code is required' });
+    }
+
+    try {
+        const codeRef = db.collection('oauthExchangeCodes').doc(code);
+        const result = await db.runTransaction(async (transaction) => {
+            const doc = await transaction.get(codeRef);
+            if (!doc.exists) {
+                throw new Error('Invalid exchange code');
+            }
+            const data = doc.data();
+            if (data.used) {
+                throw new Error('Exchange code already used');
+            }
+            const expiresAt = data.expiresAt?.toDate?.() || new Date(data.expiresAt);
+            if (expiresAt < new Date()) {
+                throw new Error('Exchange code expired');
+            }
+
+            transaction.update(codeRef, { used: true, usedAt: new Date() });
+            return data;
+        });
+
+        const token = jwt.sign({ uid: result.uid, email: result.email }, jwtSecret(), { expiresIn: '24h' });
+        setAuthCookie(res, token);
+        res.json({ success: true, token, user: { id: result.uid, email: result.email } });
+    } catch (err) {
+        res.status(400).json({ error: err.message || 'Invalid or expired exchange code' });
+    }
+};
+
 exports.signup = async(req, res) => {
     const validation = validateAuthPayload(req.body);
     if (!validation.valid) return res.status(400).json({ error: validation.errors.join('; ') });
@@ -114,9 +161,10 @@ exports.googleCallback = async(req, res) => {
             await db.collection('users').doc(userId).set({ email, googleSub, authProvider: 'google', createdAt: new Date() });
         }
 
+        const exchangeCode = await createOAuthExchangeCode(userId, email);
         const token = jwt.sign({ uid: userId, email }, jwtSecret(), { expiresIn: '24h' });
         setAuthCookie(res, token);
-        res.redirect(`${FRONTEND_ORIGIN}/dashboard?token=${encodeURIComponent(token)}`);
+        res.redirect(`${FRONTEND_ORIGIN}/dashboard?code=${encodeURIComponent(exchangeCode)}`);
     } catch (err) {
         res.redirect(`${FRONTEND_ORIGIN}/dashboard?error=oauth_failed`);
     }
@@ -163,9 +211,10 @@ exports.facebookCallback = async(req, res) => {
             await db.collection('users').doc(userId).set({ email, facebookId, authProvider: 'facebook', createdAt: new Date() });
         }
 
+        const exchangeCode = await createOAuthExchangeCode(userId, email);
         const token = jwt.sign({ uid: userId, email }, jwtSecret(), { expiresIn: '7d' });
         setAuthCookie(res, token);
-        res.redirect(`${FRONTEND_ORIGIN}/dashboard?token=${encodeURIComponent(token)}`);
+        res.redirect(`${FRONTEND_ORIGIN}/dashboard?code=${encodeURIComponent(exchangeCode)}`);
     } catch (err) {
         res.redirect(`${FRONTEND_ORIGIN}/dashboard?error=facebook_oauth_failed`);
     }

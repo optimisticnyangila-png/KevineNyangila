@@ -22,6 +22,23 @@ export async function isSessionValid() {
     return false;
 }
 
+export async function exchangeOAuthCode(code) {
+    if (!code) throw new Error('Code is required');
+    const response = await apiFetch(`${API_BASE}/auth/exchange-code`, {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+    });
+    const data = await response.json();
+    if (response.ok && data.success) {
+        if (data.token) {
+            localStorage.setItem('token', data.token);
+        }
+        return data;
+    } else {
+        throw new Error(data.error || 'Exchange code failed');
+    }
+}
+
 export async function login(email, password) {
     if (!email || !password) {
         throw new Error('Please enter both email and password.');

@@ -336,13 +336,17 @@ window.addEventListener('load', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const pathname = window.location.pathname;
 
-    const tokenFromUrl = urlParams.get('token');
-    if (tokenFromUrl) {
-        localStorage.setItem('token', tokenFromUrl);
-        urlParams.delete('token');
+    const codeFromUrl = urlParams.get('code');
+    if (codeFromUrl) {
+        urlParams.delete('code');
         const newSearch = urlParams.toString();
         const newUrl = pathname + (newSearch ? `?${newSearch}` : '');
         window.history.replaceState({}, document.title, newUrl);
+        try {
+            await authModule.exchangeOAuthCode(codeFromUrl);
+        } catch (err) {
+            console.error('OAuth code exchange failed:', err.message);
+        }
     }
 
     const oauthError = urlParams.get('error');
