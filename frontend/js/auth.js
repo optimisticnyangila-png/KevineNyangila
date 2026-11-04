@@ -23,6 +23,9 @@ export async function isSessionValid() {
 }
 
 export async function login(email, password) {
+    if (!email || !password) {
+        throw new Error('Please enter both email and password.');
+    }
     localStorage.removeItem('token');
     const response = await apiFetch(`${API_BASE}/auth/login`, {
         method: 'POST',
@@ -30,7 +33,9 @@ export async function login(email, password) {
     });
     const data = await response.json();
     if (response.ok && data.success) {
-        localStorage.setItem('token', data.token);
+        if (data.token) {
+            localStorage.setItem('token', data.token);
+        }
         return data;
     } else {
         throw new Error(data.error || 'Login failed');
@@ -38,6 +43,9 @@ export async function login(email, password) {
 }
 
 export async function signup(email, password) {
+    if (!email || !password) {
+        throw new Error('Please enter both email and password.');
+    }
     localStorage.removeItem('token');
     const response = await apiFetch(`${API_BASE}/auth/signup`, {
         method: 'POST',
@@ -45,7 +53,9 @@ export async function signup(email, password) {
     });
     const data = await response.json();
     if (response.ok && data.success) {
-        localStorage.setItem('token', data.token);
+        if (data.token) {
+            localStorage.setItem('token', data.token);
+        }
         return data;
     } else {
         throw new Error(data.error || 'Registration failed');

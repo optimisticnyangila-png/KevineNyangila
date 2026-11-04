@@ -200,49 +200,56 @@ async function handleRetryPublish(postId, targets) {
     }
 }
 
-// --- Event Listeners ---
+// --- Event Listener Safe Helper ---
+function addClickListener(id, handler) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('click', handler);
+    }
+}
 
-document.getElementById('email-login').addEventListener('click', async () => {
+// --- Event Listeners ---
+addClickListener('email-login', async () => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     try {
         const data = await authModule.login(email, password);
-        showNotification(data.message, 'success');
+        showNotification(data.message || 'Login successful', 'success');
         showDashboard();
     } catch (error) {
         alert(error.message);
     }
 });
 
-document.getElementById('email-signup').addEventListener('click', async () => {
+addClickListener('email-signup', async () => {
     const email = document.getElementById('register-email').value;
     const password = document.getElementById('register-password').value;
     try {
         const data = await authModule.signup(email, password);
-        showNotification(data.message, 'success');
+        showNotification(data.message || 'Signup successful', 'success');
         showDashboard();
     } catch (error) {
         alert(error.message);
     }
 });
 
-document.getElementById('logout').addEventListener('click', authModule.logout);
-document.getElementById('google-login').addEventListener('click', authModule.handleGoogleLogin);
-document.getElementById('facebook-login').addEventListener('click', authModule.handleFacebookLogin);
-document.getElementById('google-signup').addEventListener('click', authModule.handleGoogleLogin);
-document.getElementById('facebook-signup').addEventListener('click', authModule.handleFacebookLogin);
-document.getElementById('signup').addEventListener('click', ui.showRegister);
-document.getElementById('show-login-link').addEventListener('click', (e) => { e.preventDefault(); ui.showLogin(); });
-document.getElementById('show-login-from-register').addEventListener('click', (e) => { e.preventDefault(); ui.showLogin(); });
-document.getElementById('cancel-edit-btn').addEventListener('click', clearEditingMode);
-document.getElementById('close-results-btn').addEventListener('click', () => document.getElementById('publish-results').classList.add('hidden'));
+addClickListener('logout', authModule.logout);
+addClickListener('google-login', authModule.handleGoogleLogin);
+addClickListener('facebook-login', authModule.handleFacebookLogin);
+addClickListener('google-signup', authModule.handleGoogleLogin);
+addClickListener('facebook-signup', authModule.handleFacebookLogin);
+addClickListener('signup', ui.showRegister);
+addClickListener('show-login-link', (e) => { e.preventDefault(); ui.showLogin(); });
+addClickListener('show-login-from-register', (e) => { e.preventDefault(); ui.showLogin(); });
+addClickListener('cancel-edit-btn', clearEditingMode);
+addClickListener('close-results-btn', () => document.getElementById('publish-results').classList.add('hidden'));
 
-document.getElementById('connect-facebook').addEventListener('click', () => window.location.href = `${API_BASE}/connect-platform/facebook/authorize`);
-document.getElementById('connect-instagram').addEventListener('click', () => window.location.href = `${API_BASE}/connect-platform/instagram/authorize`);
-document.getElementById('connect-tiktok').addEventListener('click', () => window.location.href = `${API_BASE}/connect-platform/tiktok/authorize`);
-document.getElementById('connect-youtube').addEventListener('click', () => window.location.href = `${API_BASE}/connect-platform/youtube/authorize`);
+addClickListener('connect-facebook', () => window.location.href = `${API_BASE}/connect-platform/facebook/authorize`);
+addClickListener('connect-instagram', () => window.location.href = `${API_BASE}/connect-platform/instagram/authorize`);
+addClickListener('connect-tiktok', () => window.location.href = `${API_BASE}/connect-platform/tiktok/authorize`);
+addClickListener('connect-youtube', () => window.location.href = `${API_BASE}/connect-platform/youtube/authorize`);
 
-document.getElementById('create-post-btn').addEventListener('click', async () => {
+addClickListener('create-post-btn', async () => {
     const content = document.getElementById('post-content').value;
     const media = document.getElementById('media-upload').files;
     const accounts = ui.getSelectedAccounts();
@@ -284,7 +291,7 @@ document.getElementById('create-post-btn').addEventListener('click', async () =>
     }
 });
 
-document.getElementById('schedule-post-btn').addEventListener('click', async () => {
+addClickListener('schedule-post-btn', async () => {
     const postId = document.getElementById('active-post').value || lastCreatedPostId;
     const raw = document.getElementById('schedule-time').value;
     if (!postId || !raw) {
@@ -309,7 +316,7 @@ document.getElementById('schedule-post-btn').addEventListener('click', async () 
     }
 });
 
-document.getElementById('publish-now-btn').addEventListener('click', async () => {
+addClickListener('publish-now-btn', async () => {
     const postId = document.getElementById('active-post').value || lastCreatedPostId;
     if (!postId) {
         alert('Select a post first.');
@@ -328,6 +335,15 @@ document.getElementById('publish-now-btn').addEventListener('click', async () =>
 window.addEventListener('load', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const pathname = window.location.pathname;
+
+    const tokenFromUrl = urlParams.get('token');
+    if (tokenFromUrl) {
+        localStorage.setItem('token', tokenFromUrl);
+        urlParams.delete('token');
+        const newSearch = urlParams.toString();
+        const newUrl = pathname + (newSearch ? `?${newSearch}` : '');
+        window.history.replaceState({}, document.title, newUrl);
+    }
 
     const oauthError = urlParams.get('error');
     if (oauthError) {

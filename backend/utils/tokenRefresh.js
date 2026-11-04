@@ -9,15 +9,18 @@ const db = admin.firestore();
  */
 async function refreshFacebookToken(accountId, oldToken) {
     try {
-        if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
+        const appId = process.env.FB_APP_ID || process.env.FACEBOOK_APP_ID;
+        const appSecret = process.env.FB_APP_SECRET || process.env.FACEBOOK_APP_SECRET;
+
+        if (!appId || !appSecret) {
             throw new Error('Facebook credentials not configured');
         }
 
         const response = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
             params: {
                 grant_type: 'fb_exchange_token',
-                client_id: process.env.FACEBOOK_APP_ID,
-                client_secret: process.env.FACEBOOK_APP_SECRET,
+                client_id: appId,
+                client_secret: appSecret,
                 fb_exchange_token: oldToken,
             },
         });

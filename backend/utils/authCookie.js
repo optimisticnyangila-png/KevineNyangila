@@ -5,7 +5,7 @@
 const COOKIE_NAME = process.env.AUTH_COOKIE_NAME || 'access_token';
 
 function isProduction() {
-    return process.env.NODE_ENV === 'production';
+    return process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER || process.env.VERCEL);
 }
 
 function baseCookieOptions() {

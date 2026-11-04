@@ -26,7 +26,9 @@ function loadEnvFile(filePath) {
 loadEnvFile(path.join(__dirname, '.env'));
 
 app.get('/config.js', (req, res) => {
-    const apiBaseUrl = process.env.API_BASE_URL || process.env.BACKEND_ORIGIN || 'https://flowpost-backed.onrender.com';
+    const isProduction = process.env.NODE_ENV === 'production';
+    const defaultApiBase = isProduction ? 'https://flowpost-backed.onrender.com' : 'http://localhost:5000';
+    const apiBaseUrl = process.env.API_BASE_URL || process.env.BACKEND_ORIGIN || defaultApiBase;
     const frontendOrigin = process.env.FRONTEND_ORIGIN || `http://localhost:${process.env.PORT || 3000}`;
     const apiKey = process.env.API_KEY || process.env.FIREBASE_API_KEY || '';
 

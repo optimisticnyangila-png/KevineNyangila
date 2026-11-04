@@ -120,7 +120,7 @@ async function publishToYouTube(post, account) {
         });
         return { id: response.data.id };
     } finally {
-        fs.unlinkSync(tmpPath);
+        if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
     }
 }
 
@@ -141,7 +141,7 @@ async function publishToTikTok(post, account) {
         }).toString());
         return { id: pubRes.data?.data?.video_id || videoId };
     } finally {
-        fs.unlinkSync(tmpPath);
+        if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
     }
 }
 

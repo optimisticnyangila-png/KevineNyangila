@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const db = admin.firestore();
 const redisPublishQueue = require('../utils/redisPublishQueue');
 const { validatePublishPayload } = require('../utils/requestValidation');
-const { info: logInfo, error: logError } = require('../utils/logger');
+const { info: logInfo, error: logError, warn: logWarn } = require('../utils/logger');
 
 function getSocketManager(req) {
     return req.app && req.app.locals && req.app.locals.socketManager;
@@ -22,7 +22,15 @@ exports.publishPost = async(req, res) => {
         const postData = postSnap.data();
         if (postData.uid !== uid) return res.status(403).json({ error: 'Unauthorized' });
 
-        const queueItems = await redisPublishQueue.enqueuePosts(uid, [{ id: postId, ...postData }], postData.targets || []);
+        let queueItems;
+        try {
+            queueItems = await redisPublishQueue.enqueuePosts(uid, [{ id: postId, ...postData }], postData.targets || []);
+        } catch (queueErr) {
+            logWarn('Redis queue unavailable, attempting direct publication', { error: queueErr.message });
+            const { publishToPlatforms } = require('../utils/publishUtils');
+            const result = await publishToPlatforms({ id: postId, ...postData, uid });
+            return res.json({ success: true, message: 'Published directly', result });
+        }
 
         const socketManager = getSocketManager(req);
         if (socketManager) {
@@ -54,8 +62,16 @@ exports.retryPublish = async(req, res) => {
         const postData = postSnap.data();
         if (postData.uid !== uid) return res.status(403).json({ error: 'Unauthorized' });
 
-        const retryPostData = { id: postId, ...postData, targets };
-        const queueItems = await redisPublishQueue.enqueuePosts(uid, [retryPostData], targets);
+        const retryPostData = { id: postId, ...postData, targets, uid };
+        let queueItems;
+        try {
+            queueItems = await redisPublishQueue.enqueuePosts(uid, [retryPostData], targets);
+        } catch (queueErr) {
+            logWarn('Redis queue unavailable for retry, attempting direct publication', { error: queueErr.message });
+            const { publishToPlatforms } = require('../utils/publishUtils');
+            const result = await publishToPlatforms(retryPostData);
+            return res.json({ success: true, message: 'Retry published directly', result });
+        }
 
         const socketManager = getSocketManager(req);
         if (socketManager) {

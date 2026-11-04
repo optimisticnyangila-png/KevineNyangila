@@ -114,8 +114,9 @@ exports.googleCallback = async(req, res) => {
             await db.collection('users').doc(userId).set({ email, googleSub, authProvider: 'google', createdAt: new Date() });
         }
 
-        setAuthCookie(res, jwt.sign({ uid: userId, email }, jwtSecret(), { expiresIn: '24h' }));
-        res.redirect(`${FRONTEND_ORIGIN}/dashboard`);
+        const token = jwt.sign({ uid: userId, email }, jwtSecret(), { expiresIn: '24h' });
+        setAuthCookie(res, token);
+        res.redirect(`${FRONTEND_ORIGIN}/dashboard?token=${encodeURIComponent(token)}`);
     } catch (err) {
         res.redirect(`${FRONTEND_ORIGIN}/dashboard?error=oauth_failed`);
     }
@@ -162,8 +163,9 @@ exports.facebookCallback = async(req, res) => {
             await db.collection('users').doc(userId).set({ email, facebookId, authProvider: 'facebook', createdAt: new Date() });
         }
 
-        setAuthCookie(res, jwt.sign({ uid: userId, email }, jwtSecret(), { expiresIn: '7d' }));
-        res.redirect(`${FRONTEND_ORIGIN}/dashboard`);
+        const token = jwt.sign({ uid: userId, email }, jwtSecret(), { expiresIn: '7d' });
+        setAuthCookie(res, token);
+        res.redirect(`${FRONTEND_ORIGIN}/dashboard?token=${encodeURIComponent(token)}`);
     } catch (err) {
         res.redirect(`${FRONTEND_ORIGIN}/dashboard?error=facebook_oauth_failed`);
     }

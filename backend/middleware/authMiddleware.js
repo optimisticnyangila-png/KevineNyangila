@@ -18,18 +18,34 @@ module.exports = async(req, res, next) => {
     }
 
     try {
-        if (authHeader && authHeader.startsWith('Bearer ')) {
+        const secret = process.env.JWT_SECRET;
+        const decodedHeader = jwt.decode(token, { complete: true });
+        const alg = decodedHeader && decodedHeader.header && decodedHeader.header.alg;
+
+        // Synchronous app JWT check for HS256 algorithm tokens
+        if (alg === 'HS256' && secret) {
+            try {
+                const decoded = jwt.verify(token, secret);
+                req.user = decoded;
+                req.token = token;
+                return next();
+            } catch (jwtErr) {
+                // Fallthrough if token verification failed
+            }
+        }
+
+        // Check Firebase ID token if RS256 or issuer matches Firebase
+        if (authHeader && authHeader.startsWith('Bearer ') && admin.apps.length) {
             try {
                 const decoded = await admin.auth().verifyIdToken(token);
                 req.user = decoded;
                 req.token = token;
                 return next();
             } catch (firebaseErr) {
-                // Fallback to app JWT if Authorization header contains the app token.
+                // Fallthrough to standard JWT verification
             }
         }
 
-        const secret = process.env.JWT_SECRET;
         if (!secret) {
             return res.status(500).json({ error: 'Server misconfiguration: JWT_SECRET not set' });
         }
