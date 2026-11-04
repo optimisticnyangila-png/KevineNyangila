@@ -93,10 +93,18 @@ jest.mock('../utils/redisPublishQueue', () => ({
 }));
 
 jest.mock('ioredis', () => jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
     ping: jest.fn(async() => 'PONG'),
     quit: jest.fn(async() => {}),
     disconnect: jest.fn(async() => {}),
     info: jest.fn(async() => ''),
+    multi: jest.fn(() => ({
+        zremrangebyscore: jest.fn().mockReturnThis(),
+        zadd: jest.fn().mockReturnThis(),
+        zcard: jest.fn().mockReturnThis(),
+        expire: jest.fn().mockReturnThis(),
+        exec: jest.fn(async() => [[null, 0], [null, 1], [null, 1], [null, 1]]),
+    })),
 })));
 
 jest.mock('bull', () => jest.fn().mockImplementation(() => ({

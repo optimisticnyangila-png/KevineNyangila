@@ -1,11 +1,11 @@
 const axios = require('axios');
 const admin = require('firebase-admin');
 const { info: logInfo, error: logError } = require('./logger');
+const { decrypt, encrypt } = require('./encryption');
 const db = admin.firestore();
 
 /**
  * Refresh Facebook/Instagram token using long-lived access token
- * Facebook tokens last ~60 days; this extends them to 60 more days
  */
 async function refreshFacebookToken(accountId, oldToken) {
     try {
@@ -23,12 +23,11 @@ async function refreshFacebookToken(accountId, oldToken) {
         });
 
         const newToken = response.data.access_token;
-        const expiresIn = response.data.expires_in || 5184000; // 60 days in seconds
+        const expiresIn = response.data.expires_in || 5184000;
 
         logInfo(`Refreshed Facebook token for account ${accountId}`);
         return {
             accessToken: newToken,
-            expiresIn,
             tokenExpiresAt: new Date(Date.now() + expiresIn * 1000),
         };
     } catch (err) {
@@ -54,12 +53,11 @@ async function refreshYouTubeToken(accountId, refreshToken) {
         });
 
         const newToken = response.data.access_token;
-        const expiresIn = response.data.expires_in || 3600; // 1 hour in seconds
+        const expiresIn = response.data.expires_in || 3600;
 
         logInfo(`Refreshed YouTube token for account ${accountId}`);
         return {
             accessToken: newToken,
-            expiresIn,
             tokenExpiresAt: new Date(Date.now() + expiresIn * 1000),
         };
     } catch (err) {
@@ -70,33 +68,32 @@ async function refreshYouTubeToken(accountId, refreshToken) {
 
 /**
  * Check and refresh token if expired
- * Returns updated token or null if refresh failed
  */
 async function ensureValidToken(accountDoc, account) {
     const now = Date.now();
-    const tokenExpiresAt = account.tokenExpiresAt ?.toMillis ?.() || account.tokenExpiresAt || null;
+    const tokenExpiresAt = account.tokenExpiresAt?.toMillis?.() || account.tokenExpiresAt || null;
+
+    // Decrypt current tokens
+    const currentAccessToken = decrypt(account.accessToken);
+    const currentRefreshToken = decrypt(account.refreshToken);
 
     // Token still valid? (with 5 minute buffer)
     if (tokenExpiresAt && tokenExpiresAt > now + 300000) {
-        return account.accessToken;
+        return currentAccessToken;
     }
 
     logInfo(`Token expired for ${account.platform} account ${account.accountId}. Attempting refresh...`);
 
     let refreshed = null;
-    if (account.platform === 'youtube' && account.refreshToken) {
-        refreshed = await refreshYouTubeToken(accountDoc.id, account.refreshToken);
+    if (account.platform === 'youtube' && currentRefreshToken) {
+        refreshed = await refreshYouTubeToken(accountDoc.id, currentRefreshToken);
     } else if (['facebook', 'instagram'].includes(account.platform)) {
-        refreshed = await refreshFacebookToken(accountDoc.id, account.accessToken);
-    } else {
-        logError(`Cannot refresh ${account.platform} token: no refresh mechanism`);
-        return null;
+        refreshed = await refreshFacebookToken(accountDoc.id, currentAccessToken);
     }
 
     if (refreshed) {
-        // Update database
         await db.collection('platformAccounts').doc(accountDoc.id).set({
-            accessToken: refreshed.accessToken,
+            accessToken: encrypt(refreshed.accessToken),
             tokenExpiresAt: refreshed.tokenExpiresAt,
             lastRefreshedAt: new Date(),
         }, { merge: true });
@@ -106,22 +103,15 @@ async function ensureValidToken(accountDoc, account) {
     return null;
 }
 
-/**
- * Get valid token for an account, refreshing if necessary
- */
 async function getValidToken(accountId) {
     try {
         const accountDoc = await db.collection('platformAccounts').doc(accountId).get();
-        if (!accountDoc.exists) {
-            throw new Error('Account not found');
-        }
+        if (!accountDoc.exists) throw new Error('Account not found');
 
         const account = accountDoc.data();
         const token = await ensureValidToken(accountDoc, account);
 
-        if (!token) {
-            throw new Error(`Token expired and could not be refreshed for ${account.platform}`);
-        }
+        if (!token) throw new Error(`Token expired and could not be refreshed for ${account.platform}`);
 
         return token;
     } catch (err) {

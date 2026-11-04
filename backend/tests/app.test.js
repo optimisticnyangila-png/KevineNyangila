@@ -51,10 +51,18 @@ jest.mock('../utils/redisPublishQueue', () => ({
 }));
 
 jest.mock('ioredis', () => jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
     ping: jest.fn(async() => 'PONG'),
     quit: jest.fn(async() => {}),
     disconnect: jest.fn(async() => {}),
     info: jest.fn(async() => ''),
+    multi: jest.fn(() => ({
+        zremrangebyscore: jest.fn().mockReturnThis(),
+        zadd: jest.fn().mockReturnThis(),
+        zcard: jest.fn().mockReturnThis(),
+        expire: jest.fn().mockReturnThis(),
+        exec: jest.fn(async() => [[null, 0], [null, 1], [null, 1], [null, 1]]),
+    })),
 })));
 
 jest.mock('bull', () => jest.fn().mockImplementation(() => ({
@@ -98,10 +106,10 @@ describe('Platforms API', () => {
             .set('Authorization', authHeader());
 
         expect(res.statusCode).toBe(200);
-        expect(res.body).toHaveProperty('facebook');
-        expect(res.body).toHaveProperty('youtube');
-        expect(res.body).toHaveProperty('instagram');
-        expect(res.body).toHaveProperty('tiktok');
+        expect(res.body.platforms).toHaveProperty('facebook');
+        expect(res.body.platforms).toHaveProperty('youtube');
+        expect(res.body.platforms).toHaveProperty('instagram');
+        expect(res.body.platforms).toHaveProperty('tiktok');
     });
 
     test('GET /platform-accounts requires authentication', async() => {

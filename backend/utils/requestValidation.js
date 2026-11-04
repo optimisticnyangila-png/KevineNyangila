@@ -19,6 +19,10 @@ function isValidUrl(value) {
 
     try {
         const url = new URL(value);
+        // Enforce HTTPS in production for better security
+        if (process.env.NODE_ENV === 'production' && url.protocol !== 'https:') {
+            return false;
+        }
         return url.protocol === 'http:' || url.protocol === 'https:';
     } catch {
         return false;
@@ -26,24 +30,9 @@ function isValidUrl(value) {
 }
 
 function validateTargets(targets) {
-    return Array.isArray(targets) && targets.length > 0 && targets.every((target) => typeof target === 'string' && target.trim().length > 0);
-}
-
-function normalizeTargets(targets) {
-    const cleanTargets = {};
-
-    if (targets && typeof targets === 'object' && !Array.isArray(targets)) {
-        for (const platform of ALLOWED_PLATFORMS) {
-            if (Object.prototype.hasOwnProperty.call(targets, platform)) {
-                const targetValue = normalizeString(targets[platform]);
-                if (targetValue) {
-                    cleanTargets[platform] = targetValue;
-                }
-            }
-        }
-    }
-
-    return cleanTargets;
+    return Array.isArray(targets) &&
+           targets.length > 0 &&
+           targets.every((target) => typeof target === 'string' && /^[a-zA-Z0-9_\-]+$/.test(target));
 }
 
 function validatePostPayload(body) {
@@ -61,21 +50,17 @@ function validatePostPayload(body) {
     }
 
     if (mediaUrls.some((url) => !isValidUrl(url))) {
-        errors.push('mediaUrls must contain valid https:// or http:// URLs');
+        errors.push('mediaUrls must contain valid URLs (HTTPS required in production)');
     }
 
     if (!validateTargets(targets)) {
-        errors.push('targets must be an array of at least one account ID');
+        errors.push('targets must be an array of valid account IDs (alphanumeric, underscore, hyphen)');
     }
 
     return {
         valid: errors.length === 0,
         errors,
-        value: {
-            content,
-            mediaUrls,
-            targets,
-        },
+        value: { content, mediaUrls, targets },
     };
 }
 
@@ -84,8 +69,8 @@ function validateSchedulePayload(body) {
     const postId = normalizeString(body.postId);
     const scheduledTime = normalizeString(body.scheduledTime);
 
-    if (!postId) {
-        errors.push('postId is required');
+    if (!postId || !/^[a-zA-Z0-9_\-]+$/.test(postId)) {
+        errors.push('A valid postId is required');
     }
 
     const date = new Date(scheduledTime);
@@ -98,10 +83,7 @@ function validateSchedulePayload(body) {
     return {
         valid: errors.length === 0,
         errors,
-        value: {
-            postId,
-            scheduledTime: date,
-        },
+        value: { postId, scheduledTime: date },
     };
 }
 
@@ -109,16 +91,14 @@ function validatePublishPayload(body) {
     const errors = [];
     const postId = normalizeString(body.postId);
 
-    if (!postId) {
-        errors.push('postId is required');
+    if (!postId || !/^[a-zA-Z0-9_\-]+$/.test(postId)) {
+        errors.push('A valid postId is required');
     }
 
     return {
         valid: errors.length === 0,
         errors,
-        value: {
-            postId,
-        },
+        value: { postId },
     };
 }
 
